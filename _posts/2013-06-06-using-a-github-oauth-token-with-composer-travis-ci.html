@@ -1,0 +1,73 @@
+---
+layout: post
+title: 'Instructions: Using a GitHub OAuth token with Composer & Travis CI'
+date: 2013-06-06 08:22:53.000000000 +02:00
+---
+<p><strong>Update</strong>: The nice guys from travis-ci <a
+    href="http://about.travis-ci.org/blog/2013-06-17-time-for-a-vm-update/">have added an API token for GitHub</a>.</p>
+<h1>Introduction</h1>
+<p>I use <a href="https://github.com/">GitHub</a> to host my open-source projects. Most of them are PHP libraries.</p>
+<p>For testing those libraries, I use <a href="https://travis-ci.org/">Travis CI</a>. Every commit I push to the GitHub
+  repository gets tested by their CI (Continuous Integration) server.</p>
+<p>Of course, I use <a href="http://getcomposer.org">Composer</a> for managing dependencies on my PHP projects.</p>
+<p><a href="https://travis-ci.org/vierbergenlars/defer/jobs/7817209"><img class=" wp-image-15 alignright"
+      alt="Stalled build due to exhausted API limit"
+      src="{{ site.baseurl }}/assets/screenshot-from-2013-06-06-091111.png" width="322" height="259" /></a><br />
+  Usually everything works out fine, but sometimes the dependency installation fails because I reached the GitHub API
+  limit. That's <a href="http://developer.github.com/v3/#rate-limiting">60 calls</a> per hour per IP address for
+  unauthenticated requests. Since Travis runs <em>a lot</em> of tests for various projects, it is possible that
+  an&nbsp;earlier&nbsp;project already exhausted the API limit.</p>
+<p>Because composer keeps waiting for input of a username and password, Travis aborts the build after 10 minutes, and it
+  shows up as errored.</p>
+<p>
+  <!--more-->
+</p>
+<h1>The bad solution</h1>
+<p>I have seen <a
+    href="http://blog.simplytestable.com/creating-and-using-a-github-oauth-token-with-travis-and-composer/">other</a> <a
+    href="http://drafts.easybib.com/post/38230669404/composer-github-travisci">blogs</a> suggesting to create an OAuth
+  token, and just include it in your repository.&nbsp;<strong>That is a very bad idea!</strong>&nbsp;The token grants
+  unlimited access to your account via the GitHub API. If someone else got a hold of it, they can do all kinds of bad
+  stuff to your account.</p>
+<h1>The good solution</h1>
+<p>Travis supports encrypted environment variables. That is great news, as we can encrypt or OAuth token and put it in
+  an environment variable, right? Now the only thing Composer needs to do is read the env variable and use that token to
+  authenticate to the API.</p>
+<p>Unfortunately, it is not that simple. Composer does look for an OAuth environment variable.</p>
+<h1>The ugly solution</h1>
+<p>Luckily, Composer does read&nbsp;<em>~/.composer/config.json</em>, and merges it with the
+  package's&nbsp;<em>composer.json</em>. So, it's just a matter of getting the environment variable in the configuration
+  file.</p>
+<h2>Step 1: Encrypt the environment variable</h2>
+<p>Travis provides a gem that helps you to set up secure environment variables. Go ahead and install it.<br />
+  <em>Note: You'll need ruby and rubygems to install the travis gem.</em></p>
+<p>[code language="bash"]gem install travis[/code]</p>
+<p>Next, we need an OAuth token to reach the GitHub API. Go to the&nbsp;<a
+    href="https://github.com/settings/applications"><em>Applications</em></a> section of your account settings, and add
+  a personal API token.</p>
+<p>It is time to encrypt the token. Navigate to the project directory, and encrypt the environment variable.</p>
+<p>[code language="bash"]travis encrypt GH_OAUTH=4584c14558afe5580abec2d57c2256e6cb804cbf --add env.global[/code]</p>
+<p>The encrypted variable gets added to the project's&nbsp;<em>.travis.yml</em> automatically.</p>
+<h2>Step 2: Write a script to generate <em>~/.composer/config.json</em></h2>
+<p>We still need a script to create the configuration file. It is a very basic script.</p>
+<p>[code language="bash"]if [ &quot;$TRAVIS_SECURE_ENV_VARS&quot; = &quot;true&quot; ];<br />
+  then<br />
+  mkdir ~/.composer/<br />
+  echo '{ &quot;config&quot;: {&quot;github-oauth&quot;:{&quot;github.com&quot;: ' &gt; ~/.composer/config.json<br />
+  echo &quot;\&quot;$GH_OAUTH\&quot;&quot; &gt;&gt; ~/.composer/config.json<br />
+  echo '}}}' &gt;&gt; ~/.composer/config.json<br />
+  fi[/code]</p>
+<p>First, it checks whether Travis has secure env variables enabled. For security purposes, they get disabled when
+  testing a pull request.</p>
+<p>Then, create the <em>~/.composer</em> directory and write the configuration to the configuration file.</p>
+<h2>Step 3: Add setup script to <em>.travis.yml</em></h2>
+<p>Finally, the script has to be run before any Composer command is executed. Add the setup script
+  in&nbsp;<em>.travis.yml</em>. You may also need to <em>chmod +x</em>&nbsp;the script before it will execute.<br />
+  To disable all interactive questions Composer may ask, add <code>COMPOSER_NO_INTERACTION=1</code> to your environment
+  variables.</p>
+<h2>That's it</h2>
+<p>You may want to do this for every project using Composer and Travis. It is important to run&nbsp;<em>travis
+    encrypt</em> separately for each project, as the encryption key is different for each project.</p>
+<p>If you rather learn by example, you may want to look at <a
+    href="https://github.com/vierbergenlars/defer/tree/8eae9b45ef00d86a60c6c4938e2bc17e5c2c2168">vierbergenlars/defer@8eae9b</a>
+</p>

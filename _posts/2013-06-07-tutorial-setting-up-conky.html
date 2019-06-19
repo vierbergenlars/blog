@@ -1,0 +1,76 @@
+---
+layout: post
+title: 'Instructions: Setting up Conky'
+date: 2013-06-07 18:16:17.000000000 +02:00
+---
+<p>In this post, I'll show you how to set up Conky on Ubuntu in exactly the same way I did.<br />
+  This is a follow-up to <a title="Tweaking Ubuntu Gnome with&nbsp;Conky"
+    href="{{ site.baseurl }}{% post_url 2013-06-07-tweaking-ubuntu-gnome-with-conky %}">my earlier post on
+    Conky</a>. (Some people say it looks like the user interface from <em>Minority Report</em>. I have never seen the
+  movie, so I have no idea how it looks like.)<br />
+  <!--more-->
+</p>
+<p>The <code>rings.lua</code> script is not entirely mine.&nbsp;<a
+    href="http://londonali1010.deviantart.com/art/quot-Rings-quot-Meters-for-Conky-141961783">This guy</a>&nbsp;created
+  the base, I merely tweaked it.</p>
+<h1>Step 1: Get the stuff</h1>
+<p><a href="https://gist.github.com/vierbergenlars/5693854/download">Download</a>&nbsp;my the Gist.<br />
+  Install Conky through the command line, or use the software center.<br />
+  <code>$ sudo apt-get install conky</code><br />
+  <i>Note: the $ Just means you're typing this in a shell, you don't have to type it.</i></p>
+<p>Move the files from the zip to their indicated place. You'll need to create a <code>~/.conky</code> directory to move
+  the scripts to.</p>
+<p>Move the font files (<code>.ttf</code>) to&nbsp;<code>/usr/share/fonts/</code>.<br />
+  <code>$ sudo mv *.ttf /usr/share/fonts/</code></p>
+<h1>Step 2: Setting up</h1>
+<p><img class="alignright size-medium wp-image-46" alt="Screenshot from 2013-06-07 17:08:48"
+    src="{{ site.baseurl }}/assets/screenshot-from-2013-06-07-170848.png?w=300" width="300" height="240" /></p>
+<ol>
+  <li>Set <code>background.jpg</code> as desktop background. (You should be able to figure this out yourself)</li>
+  <li>Make sure Conky starts up together with your session</li>
+  <li>Open <em>Startup applications</em>, click the&nbsp;<em>Add</em> button.</li>
+  <li>Type <code>conky</code> in the text box after <em>Command.</em></li>
+  <li>Make the shell scripts executable&nbsp;<code>$ chmod +x ~/.conky/*.sh</code></li>
+  <li>Log out and log in again to make sure Conky starts up.</li>
+</ol>
+<h1>Step 3: Tweaking</h1>
+<p>The <code>.conkyrc</code> is tweaked specifically for my computer, my number of cpus, and my screen size. It may not
+  look nicely aligned on yours.</p>
+<h2>Fixing the alignment</h2>
+<ol>
+  <li>Open up ~/.conkyrc in your favorite text editor. (The screenshots are made in <em>vim</em>, if you wonder ;))</li>
+  <li><a href="{{ site.baseurl }}/assets/screenshot-from-2013-06-07-171812.png"><img
+        class="alignright size-medium wp-image-50" alt="Screenshot from 2013-06-07 17:18:12"
+        src="{{ site.baseurl }}/assets/screenshot-from-2013-06-07-171812.png" width="300" height="87" /></a>On line 39,
+    change the value of&nbsp;<code>gap_x</code> until the vertical borders
+    of the conky window aligns with the border of the innermost rectangle on the background. Subtracting moves the
+    screen to the right, adding moves the screen to the left.</li>
+  <li>If you can't get the screen to fit nicely horizontally, try adjusting border_inner_margin on line 32. (This may
+    happen if you have a&nbsp;<strong>huge</strong> monitor which stretches the background)</li>
+  <li>On line 40, change the value of <code>gap_y</code> until the bottom border of the Conky window aligns with the
+    border of the 2nd rectangle of the background. Substracting moves the screen to the bottom, adding moves the screen
+    to the top. (I got this aligned by accident :))</li>
+  <li>Save the file. Conky automatically reloads the file, and restarts.</li>
+</ol>
+<h2>Fixing the number of CPUs</h2>
+<p>I happen to have 2 CPUs in my computer, but I left in the extension for 4 CPUs in comments.</p>
+<ol>
+  <li>Open up <code>~/.conkyrc</code>, uncomment lines 76 &amp; 77 (remove the #)</li>
+  <li><a title="Click for a screenshot showing lines needing change"
+      href="{{ site.baseurl }}/assets/screenshot-from-2013-06-07-173631.png" target="_blank">Remove lines 78 &amp; 79,
+      they add padding for the case of 2 CPUs.</a></li>
+  <li>Open up <code>~/.conky/rings.lua</code></li>
+  <li><a title="Click for a screenshot showing lines needing change"
+      href="{{ site.baseurl }}/assets/screenshot-from-2013-06-07-173825.png" target="_blank">Uncomment lines 100 to
+      127</a> (just remove --[[ on line 100, and ]] on line 127)</li>
+  <li><a title="Click for a screenshot showing lines needing change"
+      href="{{ site.baseurl }}/assets/screenshot-from-2013-06-07-174515.png" target="_blank">Update indexes on line 437,
+      439 and 441. Change the 5 to 7.</a></li>
+  <li>Save the file. Conky will automatically reload the file.</li>
+</ol>
+<h2>Removing battery configuration</h2>
+<p>Desktop users seem to have some problems with the battery configuration.</p>
+<p>To remove the battery configuration, open up <code>~/.conkyrc</code>, and remove line 98 and 99.<br />
+  Next, Open <code>~/.conky/rings.lua</code> and remove line 268 to 295.</p>
+<p>If I missed something, or it is not working for you, please let me know in the comments. Positive feedback is also
+  welcome, of course!</p>

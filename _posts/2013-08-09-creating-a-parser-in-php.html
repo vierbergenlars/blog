@@ -1,0 +1,64 @@
+---
+layout: post
+title: Creating a parser in PHP
+date: 2013-08-09 09:27:07.000000000 +02:00
+---
+<p>For my latest project, <a href="https://github.com/vierbergenlars/Norch-PHP-Client/">Norch-PHP-Client</a>, I had to
+  create a simple parser for a user-supplied string.</p>
+<p>I'll try to describe the process I followed to create the parser here. It was a struggle to get to a minimal parser,
+  but it certainly was an educational experience.</p>
+<p>The parser is built in two pieces, a lexer and a compiler. This is something I remembered from how C compilers and
+  friends are built.</p>
+<p>
+  <!--more-->
+</p>
+<h1>The lexer</h1>
+<p>The lexer converts the string to tokens. It knows and validates the syntax of the 'language', and returns some stream
+  of tokens representing keywords, strings, integers, ...</p>
+<p>In my case, all tokens actually are strings, but they have a different meaning. The lexer derives the meaning from
+  special characters in the neighborhood of the token. Usually the character is right in front, or right behind the
+  token.</p>
+<p>For example: <code>title</code> is just a string, but <code>title:</code> is a field name. So we associate the tokens
+  <code>T_STRING</code> and <code>T_FIELD_NAME</code> with them.</p>
+<p>You may want to <a href="https://gist.github.com/vierbergenlars/6186002">have a look at the code</a> while reading
+  the next paragraphs, as my explanation makes a lot references to it.</p>
+<p>To create the lexer, we loop over the string one character at a time. I prefer to do that with a while-loop instead
+  of a for-loop, so I can choose whether to increment the loop variable or not.</p>
+<p>Within the loop, we fetch a character of the string. Then a huge switch-statement executes the right code for the
+  character we just read.</p>
+<ul>
+  <li>'\': Escape character. Just append the next character as-is to the current token.</li>
+  <li>&lt;space&gt;: the end of a token. Put it in the array and create a new one</li>
+  <li>':': If there is nothing in front (there is a space right in front): Syntax error. If there is something in front
+    of it that has not yet a token id assigned, it is a T_FIELD_NAME, else syntax error. Put it in the array and create
+    a new token T_FIELD_VALUE (that's what comes after a colon)</li>
+  <li>'^': If there is nothing in front: Syntax error. If the thing in front has no token yet, it's T_FIELD_NAME, else
+    it's an error. Put it in the array, and create a new token T_FIELD_WEIGHT. Read an integer into the token. Put it in
+    the array, and if a colon follows, put the T_FIELD_NAME up again. (This simplifies the compiler a lot)</li>
+  <li>'@': If there is something in front: Syntax error. Else, the current token is a T_SEARCH_FIELD.</li>
+  <li>'"': Quoted string. It must have a space in front (or, the current token must not contain any text yet). Read an
+    encapsulated string (up to the next quote).</li>
+  <li>Anything else: Just append it to the current token.</li>
+</ul>
+<p>All characters consumed? Return an array with the tokens for the compiler to use.</p>
+<h1>The compiler</h1>
+<p>The compiler converts the tokens it receives to actual code.</p>
+<p>Basically, it's just another big switch-statement in a loop. But now, we loop over the tokens.</p>
+<p>Using a foreach-loop is not possible, because we sometimes need to consume two tokens at a time.</p>
+<p>So: If the token is a T_STRING: Append it to the search query.</p>
+<p>If it's a T_FIELD_NAME: Take the next token, and make sure there is one.</p>
+<ul>
+  <li>It's a T_FIELD_VALUE: call the addFilter() function with the field name and the field value.</li>
+  <li>It's a T_FIELD_WEIGHT: call the addWeight() function with the field name and the field weight</li>
+  <li>It's something else: Compile error: unexpected token</li>
+</ul>
+<p>It's a T_FIELD_SEARCH: call addSearchField() with the field.</p>
+<p>It's something else: Our lexer messed up. Compile error.</p>
+<h1>Conclusion</h1>
+<p>Simple parsers are quite easy to write manually, and are a <em>lot</em> faster than generated regex-based ones.</p>
+<p>However, if it's the first parser you write, things can take a while figuring out. You'll have to bite the bullet,
+  and start experimenting.</p>
+<p><strong>And don't forget to write tests!</strong> If you break a parser, and you don't figure it out immediately,
+  you're gonna have a hard time fixing it.</p>
+<p><img class="aligncenter size-full wp-image-118" alt="If you don't write tests, you're gonna have a bad time."
+    src="{{ site.baseurl }}/assets/40434677.jpg" width="400" height="400" /></p>
