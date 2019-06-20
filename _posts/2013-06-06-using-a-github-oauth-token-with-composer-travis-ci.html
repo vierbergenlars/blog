@@ -3,25 +3,20 @@ layout: post
 title: 'Instructions: Using a GitHub OAuth token with Composer & Travis CI'
 date: 2013-06-06 08:22:53.000000000 +02:00
 ---
-<p><strong>Update</strong>: The nice guys from travis-ci <a
-    href="http://about.travis-ci.org/blog/2013-06-17-time-for-a-vm-update/">have added an API token for GitHub</a>.</p>
-<h1>Introduction</h1>
 <p>I use <a href="https://github.com/">GitHub</a> to host my open-source projects. Most of them are PHP libraries.</p>
 <p>For testing those libraries, I use <a href="https://travis-ci.org/">Travis CI</a>. Every commit I push to the GitHub
   repository gets tested by their CI (Continuous Integration) server.</p>
 <p>Of course, I use <a href="http://getcomposer.org">Composer</a> for managing dependencies on my PHP projects.</p>
-<p><a href="https://travis-ci.org/vierbergenlars/defer/jobs/7817209"><img class=" wp-image-15 alignright"
-      alt="Stalled build due to exhausted API limit"
-      src="{{ site.baseurl }}/assets/screenshot-from-2013-06-06-091111.png" width="322" height="259" /></a><br />
-  Usually everything works out fine, but sometimes the dependency installation fails because I reached the GitHub API
-  limit. That's <a href="http://developer.github.com/v3/#rate-limiting">60 calls</a> per hour per IP address for
+<p>Usually everything works out fine, but <a
+    href="https://travis-ci.org/vierbergenlars/defer/jobs/7817209">sometimes</a> the dependency installation fails
+  because I reached the GitHub API limit. That's <a href="http://developer.github.com/v3/#rate-limiting">60 calls</a>
+  per hour per IP address for
   unauthenticated requests. Since Travis runs <em>a lot</em> of tests for various projects, it is possible that
   an&nbsp;earlier&nbsp;project already exhausted the API limit.</p>
 <p>Because composer keeps waiting for input of a username and password, Travis aborts the build after 10 minutes, and it
   shows up as errored.</p>
-<p>
-  <!--more-->
-</p>
+
+
 <h1>The bad solution</h1>
 <p>I have seen <a
     href="http://blog.simplytestable.com/creating-and-using-a-github-oauth-token-with-travis-and-composer/">other</a> <a
@@ -71,3 +66,5 @@ date: 2013-06-06 08:22:53.000000000 +02:00
 <p>If you rather learn by example, you may want to look at <a
     href="https://github.com/vierbergenlars/defer/tree/8eae9b45ef00d86a60c6c4938e2bc17e5c2c2168">vierbergenlars/defer@8eae9b</a>
 </p>
+<p><strong>Update</strong>: The nice guys from travis-ci <a
+    href="http://about.travis-ci.org/blog/2013-06-17-time-for-a-vm-update/">have added an API token for GitHub</a>.</p>
