@@ -90,8 +90,8 @@ The second option, which seems to work for now, is to put in a page rule in Clou
 
 After bypassing the cache for WebDAV requests, the amount of bytes transmitted through the Nextcloud WebDAV endpoint immediately dropped to a fraction.
 
-![WebDAV traffic before and after]({{ site.baseurl }}/assets/nextcloud-cloudflare/webdav-traffic.png)
+[![WebDAV traffic before and after]({{ site.baseurl }}/assets/nextcloud-cloudflare/webdav-traffic.png)]({{ site.baseurl }}/assets/nextcloud-cloudflare/webdav-traffic.png)
 
 A more detail view after applying the fix. Transfer rates went from 5 MB/s and over to mostly under 200 kB/s, which is a reduction of 25 times.
 
-![WebDAV traffic after, zoomed in]({{ site.baseurl }}/assets/nextcloud-cloudflare/webdav-traffic-after.png)
+[![WebDAV traffic after, zoomed in]({{ site.baseurl }}/assets/nextcloud-cloudflare/webdav-traffic-after.png)]({{ site.baseurl }}/assets/nextcloud-cloudflare/webdav-traffic-after.png)
