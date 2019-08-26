@@ -1,6 +1,9 @@
-# Breaking DNS with consul and dnsmasq forwarding
+---
+layout: post
+title: Breaking DNS with consul and dnsmasq forwarding
+---
 
-Last week, I broke DNS on a production cluster by attempting to resolve a hostname.
+Last month, I broke DNS on a production cluster by attempting to resolve a hostname.
 
 ## Discovery
 
@@ -33,11 +36,9 @@ In this case, that is the dnsmasq server running at `10.88.10.3`. dnsmasq receiv
 
 Consul is configured with a recursor, so DNS queries for other (not `*.consul`) domains would be forwarded to the same dnsmasq server.
 
-However, consul also forwards all DNS queries that it can not answer for the `*.consul` domain to its recursors.
-And consul only knows how to answer `SOA`, `NS`, `AXFR`, `SRV`, `ANY`, `A`, `AAAA` and `TXT` records.
+However, [the underlying DNS server implementation](https://github.com/miekg/dns/blob/b13675009d59c97f3721247d9efa8914e1866a5b/serve_mux.go#L66-L81) of consul delegates `DS` queries to the parent handler, which are the configured recursors.
 
 The result is that a `DS consul.` query is sent from consul `10.88.10.3` to the dnsmasq server running at `10.88.10.2`.
-
 Upon seeing a query for `consul.`, dnsmasq forwards it back to consul, and round and round in circles it goes.
 
 ## Amplification
@@ -47,10 +48,15 @@ When this limit is reached, it starts answering `SERVFAIL` to all new requests.
 This response starts making its way back up the stack of recursive DNS queries.
 
 Upon receiving a `SERVFAIL` answer, dnsmasq will retry the DNS query once more.
-Because there is a stack of 150 pending queries, every time a slot becomes available, it is immediately occupied by a retry.
+There is a stack of 150 pending queries that are waiting for a response of the previous query.
+Every time a slot becomes available, it is immediately occupied by a retry.
 
-The result is that very little legitimate DNS queries are able to get through until either dnsmasq or consul is restarted, breaking the loop.
+The result is that very little legitimate DNS queries are able to get through.
+The only way to resolve this loop is to break it by restarting either dnsmasq or consul.
 
 ## Conclusion
 
-I created a small [reproduction case](https://gist.github.com/vierbergenlars/d5877cf8bb076fb5789f47d1ad7039fb) and [reported an issue](https://github.com/hashicorp/consul/issues/6183)
+Don't create a loop in your DNS recursors' configuration.
+In our case, nothing was querying consul directly anyways, since the dnsmasq server was configured the system resolver.
+
+I [reported an issue](https://github.com/hashicorp/consul/issues/6183) to consul, because either the documentation or the code is incorrect, which lead us to think that our configuration was okay.
