@@ -59,4 +59,4 @@ The only way to resolve this loop is to break it by restarting either dnsmasq or
 Don't create a loop in your DNS recursors' configuration.
 In our case, nothing was querying consul directly anyways, since the dnsmasq server was configured the system resolver.
 
-I [reported an issue](https://github.com/hashicorp/consul/issues/6183) to consul, because either the documentation or the code is incorrect, which lead us to think that our configuration was okay.
+I [reported an issue](https://github.com/hashicorp/consul/issues/6183) to consul, because either the documentation or the code is incorrect. This lead us to think that our configuration was okay.
