@@ -1,6 +1,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/8.4.3/mermaid.min.js"></script>
 <script>
     (function () {
+
         var config = {
             securityLevel: 'loose',
             startOnLoad: true,
@@ -10,8 +11,16 @@
                 htmlLabels: true
             }
         };
+        var mermaidNodes = document.querySelectorAll('.language-mermaid');
+        mermaidNodes.forEach(node => {
+            var mermaidDivNode = document.createElement("div");
+            mermaidDivNode.classList.add("mermaid");
+            mermaidDivNode.innerHTML = node.innerHTML;
+            var directParent = node.parentNode;
+            directParent.parentNode.replaceChild(mermaidDivNode, directParent);
+        })
         mermaid.initialize(config);
-        window.mermaid.init(undefined, document.querySelectorAll('.language-mermaid'));
+
 
     })();
 </script>
