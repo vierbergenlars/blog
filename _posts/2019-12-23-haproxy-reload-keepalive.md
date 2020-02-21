@@ -30,7 +30,7 @@ graph LR
 ```
 
 Because Alfresco is running in docker containers, they don't have fixed IP addresses that can be put in the Haproxy configuration.
-This is one of the reasons why we have a consul cluster running at each client. A helper process will grab the containers IP addresses from consul, then writes the configuration for haproxy and sends a `SIGHUP` to haproxy, which will cause it to reload its configuration.
+This is one of the reasons why we have a consul cluster running at each client. A helper process will grab the containers IP addresses from consul, then writes the configuration for haproxy and sends a `SIGUSR2` to haproxy, which will cause it to reload its configuration.
 
 # A problem
 
@@ -64,8 +64,8 @@ However, that half of the requests to one haproxy server and backend are returni
 
 Things that we already encountered before that return 503 errors are:
 
- * Haproxy configuration is not updated when the Alfresco container is recreated and changed IP address, resulting in haproxy not being able to reach the Alfresco backend anymore
- * Docker overlay networking is broken, and containers can't reach each other anymore
+ * Haproxy configuration is not updated when the Alfresco container is recreated and changed IP address, resulting in haproxy not being able to reach the Alfresco backend
+ * Docker overlay networking is broken, and containers can't reach each other
  * Alfresco healtcheck failed on both nodes, and both nodes were removed from the haproxy configuration
 
 None of these cases explains why some requests are succeeding and others failing, and why the situation recovered after haproxy was restarted.
@@ -82,3 +82,30 @@ Looking at the logs of that haproxy server in kibana showed something strange:
 There are many lines similar to these, where about half of these requests succeed, and the other half fail.
 
 One thing that we notice when looking at the log messages is that failures are consistently logged by `haproxy[31628]` and successful requests are logged by `haproxy[45085]`. Failing requests are also always coming from the same set of IPs and ports.
+
+In normal circumstances, there should only be one haproxy worker process that handles requests, as [nbproc](https://cbonte.github.io/haproxy-dconv/2.0/configuration.html#3.1-nbproc) is set to 1. The fact that 2 worker processes are running at the same time is an indication that something went wrong.
+
+## How haproxy reloads its configuration
+
+Like many *nix daemons, haproxy implements a reload mechanism that allows loading a new configuration without stopping and starting the server.
+In haproxy, there are multiple ways the reload mechanism works, depending on the mode in which haproxy is started.
+We are using the master-worker mode, so I will only describe that mechanism here.
+
+The reload starts when the master process receives a `SIGUSR2` signal.
+
+```mermaid
+sequenceDiagram
+    activate Old worker
+    User-->>Haproxy master: SIGUSR2
+    activate Haproxy master
+    Note over Haproxy master: Re-execute itself
+    Haproxy master ->> New worker: Execute new worker
+    activate New worker
+    Haproxy master ->> Old worker: SIGTTOU
+    Note over Old worker: Stop listening on all ports, keep processing existing connections
+    Haproxy master ->> New worker: Bind on all ports
+    New worker --x Old worker: SIGUSR1
+    Note over Old worker: Stop after processing all pending requests
+    deactivate Old worker
+    deactivate New worker
+```
