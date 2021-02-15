@@ -37,3 +37,5 @@ gem "hpricot", "~> 0.8.6"
 
 # Added at 2019-06-19 20:58:48 +0200 by lars:
 gem "open_uri_redirections", "~> 0.2.1"
+
+gem "kramdown-parser-gfm", "~> 1.1"
